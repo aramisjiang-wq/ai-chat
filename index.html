@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek AI 对话助手 - 极客版</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 背景动画 -->
+    <div class="matrix-bg">
+        <canvas id="matrix-canvas"></canvas>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-text">
+                    <span class="logo-main">DEEPSEEK</span>
+                    <span class="logo-sub">AI ASSISTANT</span>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span class="status-text" id="status-text">离线</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="btn btn-secondary" id="config-btn">
+                    <span class="icon">⚙️</span>
+                    配置
+                </button>
+                <button class="btn btn-secondary" id="clear-btn">
+                    <span class="icon">🗑️</span>
+                    清空
+                </button>
+                <button class="btn btn-secondary" id="export-btn">
+                    <span class="icon">📥</span>
+                    导出
+                </button>
+            </div>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="main-content">
+            <!-- 对话区域 -->
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <!-- 欢迎消息 -->
+                    <div class="message system-message">
+                        <div class="message-header">
+                            <span class="message-sender">SYSTEM</span>
+                            <span class="message-time" id="welcome-time"></span>
+                        </div>
+                        <div class="message-content">
+                            <div class="ascii-art">
+╔══════════════════════════════════════════════════════════════╗
+║  ██████╗ ███████╗███████╗██████╗ ███████╗███████╗██╗  ██╗  ║
+║  ██╔══██╗██╔════╝██╔════╝██╔══██╗██╔════╝██╔════╝██║ ██╔╝  ║
+║  ██║  ██║█████╗  █████╗  ██████╔╝███████╗█████╗  █████╔╝   ║
+║  ██║  ██║██╔══╝  ██╔══╝  ██╔═══╝ ╚════██║██╔══╝  ██╔═██╗   ║
+║  ██████╔╝███████╗███████╗██║     ███████║███████╗██║  ██╗  ║
+║  ╚═════╝ ╚══════╝╚══════╝╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝  ║
+╚══════════════════════════════════════════════════════════════╝
+                            </div>
+                            <p>🤖 欢迎使用 DeepSeek AI 对话助手 - 极客版</p>
+                            <p>💬 基于 DeepSeek API 的智能对话系统</p>
+                            <p>⚡ 支持流式响应，实时交互体验</p>
+                            <p class="help-text">
+                                💡 使用提示：<br>
+                                • 直接输入问题开始对话<br>
+                                • 点击右上角配置按钮设置 API 密钥<br>
+                                • 支持 Markdown 格式显示<br>
+                                • 按 Ctrl+Enter 快速发送消息
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="message-input" 
+                            placeholder="输入你的问题... (Ctrl+Enter 发送)"
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="send-btn" disabled>
+                            <span class="send-icon">➤</span>
+                        </button>
+                    </div>
+                    <div class="input-info">
+                        <span class="char-count" id="char-count">0</span>
+                        <span class="typing-indicator" id="typing-indicator" style="display: none;">
+                            AI 正在思考中...
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 配置模态框 -->
+    <div class="modal" id="config-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ 系统配置</h2>
+                <button class="close-btn" id="close-config">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="config-section">
+                    <label for="api-key">DeepSeek API 密钥</label>
+                    <input type="password" id="api-key" placeholder="sk-xxxxxxxxxxxxxxxx">
+                    <small>请输入你的 DeepSeek API 密钥</small>
+                </div>
+                <div class="config-section">
+                    <label for="api-url">API 基础 URL</label>
+                    <input type="url" id="api-url" value="https://api.deepseek.com/v1">
+                    <small>DeepSeek API 的基础地址</small>
+                </div>
+                <div class="config-section">
+                    <label for="model-name">模型名称</label>
+                    <select id="model-name">
+                        <option value="deepseek-chat">deepseek-chat</option>
+                        <option value="deepseek-coder">deepseek-coder</option>
+                    </select>
+                    <small>选择要使用的 AI 模型</small>
+                </div>
+                <div class="config-section">
+                    <label for="temperature">创造性 (Temperature)</label>
+                    <input type="range" id="temperature" min="0" max="1" step="0.1" value="0.7">
+                    <span class="range-value" id="temperature-value">0.7</span>
+                    <small>控制回答的创造性，0-1 之间</small>
+                </div>
+                <div class="config-section">
+                    <label for="max-tokens">最大令牌数</label>
+                    <input type="number" id="max-tokens" min="100" max="4000" value="2000">
+                    <small>单次回复的最大长度</small>
+                </div>
+                <div class="config-section">
+                    <label for="system-prompt">系统提示词</label>
+                    <textarea id="system-prompt" rows="4" placeholder="你是一个有用的AI助手..."></textarea>
+                    <small>定义 AI 的行为和角色</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="reset-config">重置</button>
+                <button class="btn btn-primary" id="save-config">保存配置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载指示器 -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>连接 AI 服务中...</p>
+        </div>
+    </div>
+
+    <!-- 通知系统 -->
+    <div class="notification-container" id="notification-container"></div>
+
+    <!-- JavaScript -->
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
